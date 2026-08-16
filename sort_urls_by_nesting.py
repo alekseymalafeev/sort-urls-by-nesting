@@ -28,10 +28,18 @@ def detect_csv_dialect(path: Path):
             dialect = csv.Sniffer().sniff(sample)
         except csv.Error:
             dialect = csv.excel
-        try:
-            has_header = csv.Sniffer().has_header(sample)
-        except csv.Error:
-            has_header = False
+
+        # Prefer explicit URL header over csv.Sniffer heuristics
+        f.seek(0)
+        first = next(csv.reader(f, dialect), None)
+        if first and str(first[0]).strip().lower() == "url":
+            has_header = True
+        else:
+            f.seek(0)
+            try:
+                has_header = csv.Sniffer().has_header(sample)
+            except csv.Error:
+                has_header = False
     return dialect, has_header
 
 
